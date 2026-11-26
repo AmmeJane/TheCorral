@@ -29,6 +29,12 @@ jobs:
           path: vault
           token: ${{ secrets.VAULT_TOKEN }}
 
+      - name: Show vault
+        run: |
+          ls -la vault
+          ls -R vault/notes | head -40
+          grep -rl "publish: true" vault/notes || echo "No published notes found"
+
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
