@@ -7,6 +7,8 @@
 
 export function noteFolder(note: { filePath?: string }) {
   const parts = note.filePath?.split(/[\\/]/) ?? [];
-  const notesIndex = parts.lastIndexOf("notes");
+  const notesIndex = parts.findLastIndex(
+    (part) => part.toLowerCase() === "notes",
+  );
   return parts.slice(notesIndex + 1, -1);
 }

@@ -1,125 +1,113 @@
 ---
-import { Image } from 'astro:assets';
-import { getCollection } from 'astro:content';
-import BaseHead from '../../components/BaseHead.astro';
-import Footer from '../../components/Footer.astro';
-import FormattedDate from '../../components/FormattedDate.astro';
-import Header from '../../components/Header.astro';
-import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
+import { getCollection } from "astro:content";
+import BaseHead from "../../components/BaseHead.astro";
+import Footer from "../../components/Footer.astro";
+import Header from "../../components/Header.astro";
+import { SITE_DESCRIPTION, SITE_TITLE } from "../../consts";
 import { noteTitle } from "../../utils/noteTitle";
 import { noteFolder } from "../../utils/noteFolder";
 
-const posts = (await getCollection('notes', ({ data }) => data.publish)).sort(
-	(a, b) => (a.data.title ?? a.id).localeCompare(b.data.title ?? b.id)
+const posts = (await getCollection("notes", ({ data }) => data.publish)).sort(
+  (a, b) => (a.data.title ?? a.id).localeCompare(b.data.title ?? b.id),
 );
 
-const groups = new Map<string, typeof posts>();
+const groups = new Map<string, Map<string, typeof posts>>();
 for (const post of posts) {
-	const folder = noteFolder(post).join("/") || "Loose notes";
-	if (!groups.has(folder)) groups.set(folder, [])
-	groups.get(folder)!.push(post);
+  const [group = "Loose notes", ...rest] = noteFolder(post);
+  const part = rest.join(" / ");
+
+  if (!groups.has(group)) groups.set(group, new Map());
+  const parts = groups.get(group)!;
+
+  if (!parts.has(part)) parts.set(part, []);
+  parts.get(part)!.push(post);
 }
 
-const sortedGroups = [...groups].sort(([a],[b]) => a.localeCompare(b))
-
+const byName = ([a]: [string, unknown], [b]: [string, unknown]) =>
+  a.localeCompare(b, undefined, { numeric: true });
 ---
 
 <!doctype html>
 <html lang="en">
-	<head>
-		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-		<style>
-			main {
-				width: 960px;
-			}
-			ul {
-				display: flex;
-				flex-wrap: wrap;
-				gap: 2rem;
-				list-style-type: none;
-				margin: 0;
-				padding: 0;
-			}
-			ul li {
-				width: calc(50% - 1rem);
-			}
-			ul li * {
-				text-decoration: none;
-				transition: 0.2s ease;
-			}
-			ul li:first-child {
-				width: 100%;
-				margin-bottom: 1rem;
-				text-align: center;
-			}
-			ul li:first-child img {
-				width: 100%;
-			}
-			ul li:first-child .title {
-				font-size: 2.369rem;
-			}
-			ul li img {
-				margin-bottom: 0.5rem;
-				border-radius: 12px;
-			}
-			ul li a {
-				display: block;
-			}
-			.title {
-				margin: 0;
-				color: rgb(var(--black));
-				line-height: 1;
-			}
-			.date {
-				margin: 0;
-				color: rgb(var(--gray));
-			}
-			ul li a:hover h4,
-			ul li a:hover .date {
-				color: rgb(var(--accent));
-			}
-			ul a:hover img {
-				box-shadow: var(--box-shadow);
-			}
-			@media (max-width: 720px) {
-				ul {
-					gap: 0.5em;
-				}
-				ul li {
-					width: 100%;
-					text-align: center;
-				}
-				ul li:first-child {
-					margin-bottom: 0;
-				}
-				ul li:first-child .title {
-					font-size: 1.563em;
-				}
-			}
-		</style>
-	</head>
-	<body>
-		<Header />
-		<main>
-			<section>
-				<ul>
-					{sortedGroups.map(([folder, notes]) => (
-						<section>
-							<h2>{folder}</h2>
-							<ul>{notes.map((post) => (
-								<li>
-									<a href={`/notes/${post.id}/`}>
-										<h4 class="title">{noteTitle(post)}</h4>
-										<p class="date">
-										</p>
-									</a>
-								</li>
-							))}</ul>
-						</section>
-					))}
-				</ul>
-			</section>
-		</main>
-		<Footer />
-	</body>
+  <head>
+    <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+    <style>
+      main {
+        width: 960px;
+      }
+      h2 {
+        color: #363636;
+      }
+
+      section:not(:first-child) {
+        padding-top: 50px;
+      }
+      h3 {
+        font-weight: 800;
+        font-size: x-large;
+        color: #777777;
+      }
+      ul {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2rem;
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+      }
+      ul li {
+        width: calc(50% - 1rem);
+      }
+      ul li * {
+        text-decoration: none;
+        transition: 0.2s ease;
+      }
+      ul li a {
+        display: block;
+        color: #363636;
+      }
+      ul li a:hover {
+        color: #2e7d6b;
+        text-decoration: underline;
+      }
+      @media (max-width: 720px) {
+        ul {
+          gap: 0.5em;
+        }
+        ul li {
+          width: 100%;
+          text-align: center;
+        }
+        ul li:first-child {
+          margin-bottom: 0;
+        }
+        ul li:first-child .title {
+          font-size: 1.563em;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <Header />
+    <main>
+      {[...groups].sort(byName).map(([group, parts]) => (
+        <section>
+          <h2>{group}</h2>
+          {[...parts].sort(byName).map(([part, notes]) => (
+            <>
+              {part && <h3>{part}</h3>}
+              <ul>
+                {notes.map((post) => (
+                  <li>
+                    <a href={`/notes/${post.id}/`}>{noteTitle(post)}</a>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ))}
+        </section>
+      ))}
+    </main>
+    <Footer />
+  </body>
 </html>
