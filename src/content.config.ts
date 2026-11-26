@@ -8,7 +8,7 @@ import { pathToFileURL } from "node:url";
 const env = loadEnv(process.env.NODE_ENV ?? "development", process.cwd(), "");
 const vault = env.VAULT_PATH ?? "./vault";
 console.log("Vault path:", vault);
-const notesDir = pathToFileURL(path.resolve(vault, "notes") + path.sep);
+const notesDir = pathToFileURL(path.resolve(vault, "Notes") + path.sep);
 
 const notes = defineCollection({
   loader: glob({ base: `${notesDir}`, pattern: "**/*.md" }),
