@@ -6,10 +6,22 @@ import Footer from '../../components/Footer.astro';
 import FormattedDate from '../../components/FormattedDate.astro';
 import Header from '../../components/Header.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
+import { noteTitle } from "../../utils/noteTitle";
+import { noteFolder } from "../../utils/noteFolder";
 
-const posts = (await getCollection('blog')).sort(
-	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+const posts = (await getCollection('notes')).sort(
+	(a, b) => (a.data.title ?? a.id).localeCompare(b.data.title ?? b.id)
 );
+
+const groups = new Map<string, typeof posts>();
+for (const post of posts) {
+	const folder = noteFolder(post).join("/") || "Loose notes";
+	if (!groups.has(folder)) groups.set(folder, [])
+	groups.get(folder)!.push(post);
+}
+
+const sortedGroups = [...groups].sort(([a],[b]) => a.localeCompare(b))
+
 ---
 
 <!doctype html>
@@ -91,18 +103,19 @@ const posts = (await getCollection('blog')).sort(
 		<main>
 			<section>
 				<ul>
-					{posts.map((post) => (
-						<li>
-							<a href={`/blog/${post.id}/`}>
-								{post.data.heroImage && (
-									<Image width={720} height={360} src={post.data.heroImage} alt="" />
-								)}
-								<h4 class="title">{post.data.title}</h4>
-								<p class="date">
-									<FormattedDate date={post.data.pubDate} />
-								</p>
-							</a>
-						</li>
+					{sortedGroups.map(([folder, notes]) => (
+						<section>
+							<h2>{folder}</h2>
+							<ul>{notes.map((post) => (
+								<li>
+									<a href={`/notes/${post.id}/`}>
+										<h4 class="title">{noteTitle(post)}</h4>
+										<p class="date">
+										</p>
+									</a>
+								</li>
+							))}</ul>
+						</section>
 					))}
 				</ul>
 			</section>
