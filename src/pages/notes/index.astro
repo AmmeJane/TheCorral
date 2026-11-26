@@ -9,7 +9,7 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
 import { noteTitle } from "../../utils/noteTitle";
 import { noteFolder } from "../../utils/noteFolder";
 
-const posts = (await getCollection('notes')).sort(
+const posts = (await getCollection('notes', ({ data }) => data.publish)).sort(
 	(a, b) => (a.data.title ?? a.id).localeCompare(b.data.title ?? b.id)
 );
 
